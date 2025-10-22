@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Survival 3D</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style-ui.css" />
+  </head>
+  <body>
+    <!-- Title Screen will be injected by JavaScript -->
+
+    <!-- Game Container -->
+    <div id="game-container"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-overlay">
+      <!-- HUD Container will be injected here -->
+
+      <!-- Debug Info (top-right) -->
+      <div id="debug-panel" style="right: 20px; left: auto; top: 20px">
+        <h3>Survival 3D</h3>
+        <div class="debug-item">
+          <span class="label">FPS:</span>
+          <span id="fps">0</span>
+        </div>
+        <div class="debug-item">
+          <span class="label">Position:</span>
+          <span id="position">X: 0, Y: 0, Z: 0</span>
+        </div>
+        <div class="debug-item">
+          <span class="label">Time:</span>
+          <span id="game-time">Day</span>
+        </div>
+      </div>
+
+      <!-- Controls Info (bottom-left) -->
+      <div id="controls-panel">
+        <h4>Controls</h4>
+        <p><strong>WASD</strong> - Move</p>
+        <p><strong>Space</strong> - Jump</p>
+        <p><strong>Mouse</strong> - Look Around</p>
+        <p><strong>E</strong> - Gather Resources</p>
+        <p><strong>F</strong> - Attack</p>
+        <p><strong>R</strong> - Use/Place Item</p>
+        <p><strong>X</strong> - Toggle Drop Mode</p>
+        <p><strong>Q</strong> - Drop Item</p>
+        <p><strong>H</strong> - Help Menu</p>
+        <p><strong>TAB</strong> - Crafting Menu</p>
+        <p><strong>B</strong> - Building Menu</p>
+        <p><strong>1-9/0</strong> - Select Tool</p>
+        <p><strong>Scroll</strong> - Cycle Tools</p>
+        <p><strong>C</strong> - Toggle Camera</p>
+      </div>
+
+      <!-- Crosshair -->
+      <div id="crosshair"></div>
+
+      <!-- Tool Feedback -->
+      <div id="tool-feedback"></div>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Game Scripts - ORDER MATTERS! -->
+    <script src="scripts/terrain.js"></script>
+    <script src="scripts/inventory.js"></script>
+    <script src="scripts/crafting.js"></script>
+    <script src="scripts/building.js"></script>
+    <script src="scripts/placeables.js"></script>
+    <script src="scripts/resources.js"></script>
+    <script src="scripts/environment.js"></script>
+    <script src="scripts/camera.js"></script>
+    <script src="scripts/player.js"></script>
+    <script src="scripts/creatures.js"></script>
+    <script src="scripts/optimization.js"></script>
+    <script src="scripts/hud.js"></script>
+    <script src="scripts/titlescreen.js"></script>
+    <script src="scripts/controls-panel.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+      // ========================================
+      // DEBUG COMMANDS
+      // ========================================
+
+      // Inventory Commands
+      window.inventoryCommands = {
+        // View current inventory
+        view: () => {
+          if (window.game?.inventory) {
+            return window.game.inventory.exportInventory();
+          }
+          return "Inventory not loaded";
+        },
+
+        // Clear inventory
+        clear: () => {
+          if (window.game?.inventory) {
+            window.game.inventory.clearInventory();
+            return "🗑️ Inventory cleared";
+          }
+          return "Inventory not loaded";
+        },
+
+        // Add test items
+        addTestItems: () => {
+          if (window.game?.inventory) {
+            window.game.inventory.addItem("wood", 50);
+            window.game.inventory.addItem("stone", 50);
+            window.game.inventory.addItem("fiber", 50);
+            return "✅ Added 50 wood, stone, and fiber";
+          }
+          return "Inventory not loaded";
+        },
+
+        // Add all tools
+        addAllTools: () => {
+          if (window.game?.inventory) {
+            window.game.inventory.addItem("wooden_pickaxe", 1);
+            window.game.inventory.addItem("stone_axe", 1);
+            window.game.inventory.addItem("stone_pickaxe", 1);
+            return "✅ Added all tools";
+          }
+          return "Inventory not loaded";
+        },
+
+        // Add placeables
+        addPlaceables: () => {
+          if (window.game?.inventory) {
+            window.game.inventory.addItem("torch", 5);
+            window.game.inventory.addItem("campfire", 3);
+            return "✅ Added 5 torches and 3 campfires";
+          }
+          return "Inventory not loaded";
+        },
+
+        // View all saves
+        viewSaves: () => {
+          const inventory = localStorage.getItem("survival3d_inventory");
+          const structures = localStorage.getItem("survival3d_structures");
+          const placeables = localStorage.getItem("survival3d_placeables");
+
+          return {
+            inventory: inventory ? JSON.parse(inventory) : null,
+            structures: structures ? JSON.parse(structures) : null,
+            placeables: placeables ? JSON.parse(placeables) : null,
+          };
+        },
+
+        // Clear all saves
+        clearAllSaves: () => {
+          localStorage.removeItem("survival3d_inventory");
+          localStorage.removeItem("survival3d_structures");
+          localStorage.removeItem("survival3d_placeables");
+          return "🗑️ All saves cleared! Refresh page to start fresh.";
+        },
+      };
+
+      // Creature Commands
+      window.creatureCommands = {
+        // List all creatures
+        list: () => {
+          if (window.game?.creatureSystem) {
+            const creatures = window.game.creatureSystem.creatures;
+            return creatures.map((c) => ({
+              name: c.speciesData.name,
+              emoji: c.speciesData.emoji,
+              health: `${c.health}/${c.maxHealth}`,
+              state: c.state,
+              position: `(${c.position.x.toFixed(1)}, ${c.position.z.toFixed(
+                1
+              )})`,
+            }));
+          }
+          return "Creature system not loaded";
+        },
+
+        // Spawn specific creature
+        spawn: (speciesId) => {
+          if (window.game?.creatureSystem) {
+            const species = window.game.creatureSystem.species.find(
+              (s) => s.id === speciesId
+            );
+            if (species) {
+              const pos = window.game.creatureSystem.findSpawnPosition();
+              if (pos) {
+                window.game.creatureSystem.spawnCreature(species, pos);
+                return `✅ Spawned ${species.emoji} ${species.name}`;
+              }
+              return "❌ Could not find spawn position";
+            }
+            return `❌ Unknown species: ${speciesId}. Available: rabbit, deer, wolf, boar, bear`;
+          }
+          return "Creature system not loaded";
+        },
+
+        // Heal player
+        healPlayer: () => {
+          if (window.game?.player) {
+            window.game.player.health = window.game.player.maxHealth;
+            return "❤️ Player fully healed";
+          }
+          return "Player not loaded";
+        },
+      };
+
+      // Building Commands
+      window.buildingCommands = {
+        // Clear all structures
+        clearAll: () => {
+          if (window.game?.buildingSystem) {
+            window.game.buildingSystem.clearAllStructures();
+            return "🗑️ All structures cleared";
+          }
+          return "Building system not loaded";
+        },
+
+        // Count structures
+        count: () => {
+          if (window.game?.buildingSystem) {
+            return `📊 ${window.game.buildingSystem.placedStructures.length} structures placed`;
+          }
+          return "Building system not loaded";
+        },
+      };
+
+      // Placeable Commands
+      window.placeableCommands = {
+        // List all placeables
+        list: () => {
+          if (window.game?.placeableSystem) {
+            return window.game.placeableSystem.placeables.map((p) => ({
+              type: p.type,
+              position: `(${p.position.x.toFixed(1)}, ${p.position.z.toFixed(
+                1
+              )})`,
+            }));
+          }
+          return "Placeable system not loaded";
+        },
+
+        // Clear all placeables
+        clearAll: () => {
+          if (window.game?.placeableSystem) {
+            for (const p of window.game.placeableSystem.placeables) {
+              if (p.mesh) window.game.scene.remove(p.mesh);
+            }
+            window.game.placeableSystem.placeables = [];
+            window.game.placeableSystem.savePlaceables();
+            return "🗑️ All placeables cleared";
+          }
+          return "Placeable system not loaded";
+        },
+      };
+
+      // Performance Commands
+      window.perfReport = {
+        // Generate performance report
+        generate: () => {
+          if (window.game?.optimizationManager) {
+            return window.game.optimizationManager.generatePerformanceReport();
+          }
+          return "Optimization manager not loaded";
+        },
+      };
+
+      // HUD Commands
+      window.hudCommands = {
+        // Restore hunger
+        restoreHunger: () => {
+          if (window.game?.hudSystem) {
+            window.game.hudSystem.hunger = window.game.hudSystem.maxHunger;
+            return "🍖 Hunger restored";
+          }
+          return "HUD not loaded";
+        },
+
+        // Restore stamina
+        restoreStamina: () => {
+          if (window.game?.hudSystem) {
+            window.game.hudSystem.stamina = window.game.hudSystem.maxStamina;
+            return "⚡ Stamina restored";
+          }
+          return "HUD not loaded";
+        },
+
+        // View stats
+        viewStats: () => {
+          if (window.game?.hudSystem) {
+            return {
+              health: `${Math.ceil(window.game.player.health)}/${
+                window.game.player.maxHealth
+              }`,
+              hunger: `${Math.ceil(window.game.hudSystem.hunger)}/${
+                window.game.hudSystem.maxHunger
+              }`,
+              stamina: `${Math.ceil(window.game.hudSystem.stamina)}/${
+                window.game.hudSystem.maxStamina
+              }`,
+              temperature: `${Math.ceil(window.game.hudSystem.temperature)}°C`,
+            };
+          }
+          return "HUD not loaded";
+        },
+      };
+
+      // Toggle collision visualization
+      window.toggleCollisionDebug = () => {
+        if (window.game) {
+          window.game.toggleCollisionDebug();
+        }
+      };
+
+      // Teleport player
+      window.teleport = (x, z) => {
+        if (window.game?.player && window.game?.terrain) {
+          const height = window.game.terrain.getHeightAt(x, z);
+          window.game.player.position.set(x, height + 3, z);
+          return `✅ Teleported to (${x}, ${z})`;
+        }
+        return "Player not loaded";
+      };
+
+      // Change time of day
+      window.setTime = (hour) => {
+        if (window.game) {
+          window.game.gameHour = hour;
+          return `🕐 Time set to ${hour}:00`;
+        }
+        return "Game not loaded";
+      };
+
+      // ========================================
+      // DISPLAY HELP
+      // ========================================
+      console.log(
+        "%c🎮 SURVIVAL 3D 🎮",
+        "font-size: 20px; color: #64c864; font-weight: bold;"
+      );
+      console.log(
+        "%cDeveloped for HlnefzgerSchoolAct",
+        "font-size: 12px; color: #aaa;"
+      );
+      console.log(
+        "%cBuild Date: 2025-10-22 18:55:39 UTC",
+        "font-size: 12px; color: #aaa;"
+      );
+      console.log(
+        "%cVersion: 1.0.0 - Complete Edition",
+        "font-size: 12px; color: #aaa;"
+      );
+      console.log("");
+      console.log(
+        "%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "color: #64c864;"
+      );
+      console.log(
+        "%cDEBUG COMMANDS:",
+        "font-size: 16px; color: #64c864; font-weight: bold;"
+      );
+      console.log(
+        "%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "color: #64c864;"
+      );
+      console.log("");
+      console.log(
+        "%c📦 INVENTORY COMMANDS:",
+        "color: #ffa500; font-weight: bold;"
+      );
+      console.log(
+        "   inventoryCommands.view()           - View current inventory"
+      );
+      console.log("   inventoryCommands.clear()          - Clear all items");
+      console.log(
+        "   inventoryCommands.addTestItems()   - Add 50 wood/stone/fiber"
+      );
+      console.log("   inventoryCommands.addAllTools()    - Add all tools");
+      console.log(
+        "   inventoryCommands.addPlaceables()  - Add torches and campfires"
+      );
+      console.log("   inventoryCommands.viewSaves()      - View all save data");
+      console.log("   inventoryCommands.clearAllSaves()  - Delete all saves");
+      console.log("");
+      console.log(
+        "%c🐾 CREATURE COMMANDS:",
+        "color: #ff6666; font-weight: bold;"
+      );
+      console.log("   creatureCommands.list()            - List all creatures");
+      console.log(
+        '   creatureCommands.spawn("rabbit")   - Spawn specific creature'
+      );
+      console.log(
+        "   creatureCommands.healPlayer()      - Restore player health"
+      );
+      console.log("   Available species: rabbit, deer, wolf, boar, bear");
+      console.log("");
+      console.log(
+        "%c🏗️ BUILDING COMMANDS:",
+        "color: #8b7355; font-weight: bold;"
+      );
+      console.log(
+        "   buildingCommands.clearAll()        - Remove all structures"
+      );
+      console.log(
+        "   buildingCommands.count()           - Count placed structures"
+      );
+      console.log(
+        "   toggleCollisionDebug()             - Show collision boxes"
+      );
+      console.log("");
+      console.log(
+        "%c🔥 PLACEABLE COMMANDS:",
+        "color: #ff6600; font-weight: bold;"
+      );
+      console.log(
+        "   placeableCommands.list()           - List all placeables"
+      );
+      console.log(
+        "   placeableCommands.clearAll()       - Remove all placeables"
+      );
+      console.log("");
+      console.log(
+        "%c⚡ PERFORMANCE COMMANDS:",
+        "color: #00ffff; font-weight: bold;"
+      );
+      console.log(
+        "   perfReport.generate()              - Generate performance report"
+      );
+      console.log("   (Performance panel in top-left shows live stats)");
+      console.log("");
+      console.log("%c📊 HUD COMMANDS:", "color: #ff00ff; font-weight: bold;");
+      console.log("   hudCommands.viewStats()            - View player stats");
+      console.log(
+        "   hudCommands.restoreHunger()        - Restore hunger to full"
+      );
+      console.log(
+        "   hudCommands.restoreStamina()       - Restore stamina to full"
+      );
+      console.log("");
+      console.log("%c🗺️ WORLD COMMANDS:", "color: #87ceeb; font-weight: bold;");
+      console.log(
+        "   teleport(x, z)                     - Teleport to coordinates"
+      );
+      console.log("   setTime(hour)                      - Set time (0-23)");
+      console.log("   Example: teleport(50, -30)");
+      console.log("   Example: setTime(12) for noon");
+      console.log("");
+      console.log(
+        "%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "color: #64c864;"
+      );
+      console.log("");
+      console.log(
+        "%c💾 COMPLETE FEATURES:",
+        "color: #64c864; font-weight: bold;"
+      );
+      console.log("   ✓ Title Screen & Loading Animation");
+      console.log(
+        "   ✓ Comprehensive HUD (Health, Hunger, Stamina, Temperature)"
+      );
+      console.log("   ✓ Minimap with Creature Tracking");
+      console.log("   ✓ Compass Navigation");
+      console.log("   ✓ Help Menu (Press H)");
+      console.log("   ✓ Auto-save (Inventory, Structures, Placeables)");
+      console.log("   ✓ 5 AI Creature Species");
+      console.log("   ✓ Combat System");
+      console.log("   ✓ Base Building with Snapping");
+      console.log("   ✓ Crafting System");
+      console.log("   ✓ Resource Gathering");
+      console.log("   ✓ Day/Night Cycle");
+      console.log("   ✓ Drop/Pickup System");
+      console.log("   ✓ Placeable Items (Torches, Campfires)");
+      console.log("   ✓ Campfire Warmth System");
+      console.log("   ✓ Performance Optimizations (LOD, Frustum Culling)");
+      console.log("");
+      console.log(
+        "%c🎮 Have fun surviving!",
+        "color: #64c864; font-weight: bold; font-size: 14px;"
+      );
+      console.log(
+        "%c💡 Press [H] in-game for help and controls",
+        "color: #ffa500; font-size: 12px;"
+      );
+      console.log(
+        "%c🔥 Press [R] with torch/campfire selected to place",
+        "color: #ff6600; font-size: 12px;"
+      );
+      console.log("");
+    </script>
+  </body>
+</html>

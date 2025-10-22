@@ -1,0 +1,1498 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+}
+
+#game-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+canvas {
+  display: block;
+  cursor: pointer;
+}
+
+#ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+#debug-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 2px solid rgba(100, 200, 100, 0.5);
+  min-width: 250px;
+  backdrop-filter: blur(5px);
+}
+
+#debug-panel h3 {
+  margin-bottom: 10px;
+  color: #64c864;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.debug-item {
+  margin: 8px 0;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.debug-item .label {
+  color: #aaa;
+  margin-right: 10px;
+}
+
+.debug-item span:last-child {
+  color: #fff;
+  font-weight: bold;
+  font-family: "Courier New", monospace;
+}
+
+#controls-panel {
+  position: absolute;
+  bottom: 100px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 2px solid rgba(100, 200, 100, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+#controls-panel h4 {
+  margin-bottom: 8px;
+  color: #64c864;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+#controls-panel p {
+  margin: 5px 0;
+  font-size: 12px;
+  color: #ccc;
+}
+
+#controls-panel strong {
+  color: #fff;
+  background: rgba(100, 200, 100, 0.2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-right: 5px;
+}
+
+#crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+#crosshair::before,
+#crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+#crosshair::before {
+  width: 12px;
+  height: 1px;
+  top: 50%;
+  left: -4px;
+  transform: translateY(-50%);
+}
+
+#crosshair::after {
+  width: 1px;
+  height: 12px;
+  left: 50%;
+  top: -4px;
+  transform: translateX(-50%);
+}
+
+#loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #64c864;
+  font-size: 24px;
+  text-align: center;
+  z-index: 1000;
+}
+
+.fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* INVENTORY SYSTEM */
+#inventory-bar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 15px;
+  border-radius: 10px;
+  border: 2px solid rgba(100, 200, 100, 0.5);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+#inventory-slots {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.inventory-slot {
+  width: 60px;
+  height: 60px;
+  background: rgba(20, 20, 20, 0.9);
+  border: 2px solid rgba(100, 200, 100, 0.3);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.inventory-slot.has-item {
+  background: rgba(40, 60, 40, 0.9);
+  border-color: rgba(100, 200, 100, 0.6);
+}
+
+.inventory-slot:hover {
+  transform: translateY(-2px);
+  border-color: rgba(100, 200, 100, 0.8);
+}
+
+.slot-icon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.slot-count {
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  font-family: "Courier New", monospace;
+}
+
+#inventory-info {
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+  min-height: 16px;
+}
+
+#selected-item-name {
+  color: #64c864;
+  font-weight: bold;
+}
+
+/* GATHER PROMPT */
+#gather-prompt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -120%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 2px solid rgba(100, 200, 100, 0.6);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  display: none;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: translate(-50%, -120%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -120%) scale(1.05);
+  }
+}
+
+/* INVENTORY MESSAGES */
+.inventory-message {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.inventory-message.success {
+  border: 2px solid rgba(100, 200, 100, 0.8);
+  color: #64c864;
+}
+
+.inventory-message.error {
+  border: 2px solid rgba(200, 100, 100, 0.8);
+  color: #c86464;
+}
+
+.inventory-message.info {
+  border: 2px solid rgba(100, 150, 200, 0.8);
+  color: #6496c8;
+}
+
+/* CRAFTING SYSTEM */
+.crafting-menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  max-height: 80vh;
+  pointer-events: all;
+  z-index: 500;
+}
+
+.crafting-menu.hidden {
+  display: none;
+}
+
+.crafting-container {
+  background: rgba(20, 20, 20, 0.95);
+  border: 3px solid rgba(100, 200, 100, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.crafting-header {
+  background: rgba(100, 200, 100, 0.2);
+  padding: 20px;
+  border-bottom: 2px solid rgba(100, 200, 100, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crafting-header h2 {
+  color: #64c864;
+  font-size: 24px;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.close-button {
+  background: rgba(200, 100, 100, 0.3);
+  border: 2px solid rgba(200, 100, 100, 0.6);
+  color: #fff;
+  font-size: 20px;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: rgba(200, 100, 100, 0.5);
+  transform: scale(1.1);
+}
+
+.crafting-content {
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.recipes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.recipe-card {
+  background: rgba(40, 40, 40, 0.8);
+  border: 2px solid rgba(100, 100, 100, 0.4);
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.2s ease;
+}
+
+.recipe-card.craftable {
+  border-color: rgba(100, 200, 100, 0.6);
+}
+
+.recipe-card.craftable:hover {
+  background: rgba(50, 70, 50, 0.8);
+  transform: translateX(5px);
+}
+
+.recipe-card.not-craftable {
+  opacity: 0.6;
+}
+
+.recipe-icon {
+  font-size: 48px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.recipe-info {
+  flex: 1;
+}
+
+.recipe-name {
+  color: #fff;
+  font-size: 18px;
+  margin: 0 0 5px 0;
+}
+
+.recipe-description {
+  color: #aaa;
+  font-size: 13px;
+  margin: 0 0 10px 0;
+}
+
+.recipe-ingredients {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ingredient {
+  background: rgba(60, 60, 60, 0.6);
+  border: 2px solid rgba(100, 100, 100, 0.4);
+  border-radius: 6px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.ingredient.has-enough {
+  border-color: rgba(100, 200, 100, 0.6);
+  background: rgba(50, 80, 50, 0.4);
+}
+
+.ingredient.not-enough {
+  border-color: rgba(200, 100, 100, 0.6);
+  background: rgba(80, 50, 50, 0.4);
+}
+
+.ingredient-icon {
+  font-size: 16px;
+}
+
+.ingredient-count {
+  color: #fff;
+  font-weight: bold;
+  font-family: "Courier New", monospace;
+}
+
+.craft-button {
+  background: rgba(100, 200, 100, 0.3);
+  border: 2px solid rgba(100, 200, 100, 0.6);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.craft-button:hover:not(.disabled) {
+  background: rgba(100, 200, 100, 0.5);
+  transform: scale(1.05);
+}
+
+.craft-button.disabled {
+  background: rgba(100, 100, 100, 0.2);
+  border-color: rgba(100, 100, 100, 0.4);
+  color: #666;
+  cursor: not-allowed;
+}
+
+.crafting-footer {
+  background: rgba(100, 200, 100, 0.1);
+  padding: 15px 20px;
+  border-top: 2px solid rgba(100, 200, 100, 0.3);
+  text-align: center;
+}
+
+.crafting-footer .hint {
+  color: #aaa;
+  font-size: 12px;
+  margin: 0;
+}
+
+/* CRAFTING MESSAGES */
+.crafting-message {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 15px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1001;
+}
+
+.crafting-message.success {
+  border: 2px solid rgba(100, 200, 100, 0.8);
+  color: #64c864;
+}
+
+.crafting-message.error {
+  border: 2px solid rgba(200, 100, 100, 0.8);
+  color: #c86464;
+}
+
+/* Scrollbar styling */
+.crafting-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.crafting-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.crafting-content::-webkit-scrollbar-thumb {
+  background: rgba(100, 200, 100, 0.4);
+  border-radius: 4px;
+}
+
+.crafting-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 200, 100, 0.6);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+body {
+  animation: fadeIn 0.5s ease-in;
+}
+
+/* ... (keep all existing CSS) ... */
+
+/* Add these new styles at the end */
+
+/* Selected Inventory Slot */
+.inventory-slot.selected {
+  border-color: rgba(255, 200, 0, 0.9) !important;
+  border-width: 3px;
+  box-shadow: 0 0 10px rgba(255, 200, 0, 0.5);
+  transform: translateY(-3px);
+}
+
+/* Tool Slot Indicator */
+.inventory-slot.tool-slot {
+  background: linear-gradient(
+    135deg,
+    rgba(40, 60, 40, 0.9),
+    rgba(60, 80, 40, 0.9)
+  );
+}
+
+/* Slot Number Display */
+.slot-number {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: "Courier New", monospace;
+}
+
+/* Tool Feedback Display */
+#tool-feedback {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 200, 0, 0.8);
+  color: #ffc800;
+  font-size: 14px;
+  font-weight: bold;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  display: none;
+  z-index: 999;
+  animation: toolPulse 0.3s ease;
+}
+
+@keyframes toolPulse {
+  0% {
+    transform: translateX(-50%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.1);
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Enhanced Gather Prompt */
+#gather-prompt {
+  white-space: pre-line;
+  line-height: 1.4;
+}
+
+/* ... (keep all existing CSS) ... */
+
+/* BUILDING SYSTEM */
+.building-menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 650px;
+  max-height: 75vh;
+  pointer-events: all;
+  z-index: 500;
+}
+
+.building-menu.hidden {
+  display: none;
+}
+
+.building-container {
+  background: rgba(20, 20, 20, 0.95);
+  border: 3px solid rgba(139, 69, 19, 0.8);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.building-header {
+  background: rgba(139, 69, 19, 0.3);
+  padding: 20px;
+  border-bottom: 2px solid rgba(139, 69, 19, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.building-header h2 {
+  color: #d4a574;
+  font-size: 24px;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.building-content {
+  padding: 20px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.structures-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.structure-card {
+  background: rgba(40, 30, 20, 0.8);
+  border: 2px solid rgba(139, 69, 19, 0.4);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.structure-card.affordable {
+  border-color: rgba(139, 115, 85, 0.6);
+}
+
+.structure-card.affordable:hover {
+  background: rgba(60, 45, 30, 0.9);
+  transform: translateX(5px);
+}
+
+.structure-card.not-affordable {
+  opacity: 0.5;
+}
+
+.structure-icon {
+  font-size: 42px;
+  min-width: 55px;
+  text-align: center;
+}
+
+.structure-info {
+  flex: 1;
+}
+
+.structure-name {
+  color: #fff;
+  font-size: 16px;
+  margin: 0 0 4px 0;
+}
+
+.structure-description {
+  color: #aaa;
+  font-size: 12px;
+  margin: 0 0 8px 0;
+}
+
+.structure-cost {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cost-item {
+  background: rgba(60, 60, 60, 0.6);
+  border: 2px solid rgba(100, 100, 100, 0.4);
+  border-radius: 5px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.cost-item.has-enough {
+  border-color: rgba(139, 115, 85, 0.7);
+  background: rgba(80, 60, 40, 0.5);
+}
+
+.cost-item.not-enough {
+  border-color: rgba(200, 100, 100, 0.6);
+  background: rgba(80, 50, 50, 0.4);
+}
+
+.cost-icon {
+  font-size: 14px;
+}
+
+.cost-count {
+  color: #fff;
+  font-weight: bold;
+  font-family: "Courier New", monospace;
+}
+
+.select-button {
+  background: rgba(139, 115, 85, 0.4);
+  border: 2px solid rgba(139, 115, 85, 0.7);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.select-button:hover:not(.disabled) {
+  background: rgba(139, 115, 85, 0.6);
+  transform: scale(1.05);
+}
+
+.select-button.disabled {
+  background: rgba(80, 80, 80, 0.3);
+  border-color: rgba(100, 100, 100, 0.4);
+  color: #666;
+  cursor: not-allowed;
+}
+
+.building-footer {
+  background: rgba(139, 69, 19, 0.2);
+  padding: 12px 20px;
+  border-top: 2px solid rgba(139, 69, 19, 0.4);
+  text-align: center;
+}
+
+.building-footer .hint {
+  color: #aaa;
+  font-size: 11px;
+  margin: 0;
+}
+
+/* Building Info Overlay */
+.building-info {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  padding: 12px 25px;
+  border-radius: 8px;
+  border: 2px solid rgba(139, 115, 85, 0.8);
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  z-index: 600;
+}
+
+.building-info-content {
+  text-align: center;
+}
+
+.building-info-content p {
+  margin: 4px 0;
+  color: #fff;
+  font-size: 14px;
+}
+
+.building-info-content .small {
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* Building Messages */
+.building-message {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1002;
+}
+
+.building-message.success {
+  border: 2px solid rgba(139, 115, 85, 0.9);
+  color: #d4a574;
+}
+
+.building-message.error {
+  border: 2px solid rgba(200, 100, 100, 0.8);
+  color: #ff6666;
+}
+
+/* Scrollbar for building menu */
+.building-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.building-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.building-content::-webkit-scrollbar-thumb {
+  background: rgba(139, 115, 85, 0.5);
+  border-radius: 4px;
+}
+
+.building-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 115, 85, 0.7);
+}
+/* ... (keep all existing CSS) ... */
+
+/* Add these new styles for snapping features */
+
+.building-options {
+  background: rgba(60, 40, 20, 0.6);
+  padding: 12px 20px;
+  border-bottom: 2px solid rgba(139, 69, 19, 0.4);
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.snap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 13px;
+  user-select: none;
+}
+
+.snap-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #8b7355;
+}
+
+.snap-toggle:hover {
+  color: #fff;
+}
+
+.snap-toggle input[type="checkbox"]:checked + span {
+  color: #d4a574;
+  font-weight: bold;
+}
+
+.snap-status {
+  margin-top: 4px !important;
+  font-size: 10px !important;
+}
+
+/* Updated building footer hint */
+.building-footer .hint {
+  font-size: 11px;
+}
+
+/* ... (keep all existing CSS) ... */
+
+/* Add at the end: */
+
+/* Collision feedback */
+@keyframes collisionPulse {
+  0% {
+    border-color: rgba(255, 100, 100, 0.6);
+  }
+  50% {
+    border-color: rgba(255, 100, 100, 1);
+  }
+  100% {
+    border-color: rgba(255, 100, 100, 0.6);
+  }
+}
+
+.collision-warning {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(200, 50, 50, 0.8);
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 100, 100, 0.9);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  display: none;
+  animation: collisionPulse 0.5s ease;
+  z-index: 999;
+}
+/* ... (keep all existing CSS) ... */
+
+/* Add at the end: */
+
+.health-bar {
+  width: 100%;
+  height: 20px;
+  background: rgba(100, 0, 0, 0.5);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.5);
+}
+
+.health-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff0000, #ff6666);
+  transition: width 0.3s ease;
+  border-radius: 8px;
+}
+
+.health-text {
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: "Courier New", monospace;
+}
+
+/* Combat Messages */
+.combat-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(200, 50, 50, 0.9);
+  padding: 15px 30px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 100, 100, 0.9);
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1003;
+  animation: combatPulse 0.5s ease;
+}
+
+@keyframes combatPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Damage Overlay */
+.damage-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 9999;
+  animation: damageFlash 0.2s ease;
+}
+
+@keyframes damageFlash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* ... (keep all existing CSS) ... */
+
+/* Add at the very end: */
+
+/* Death Screen */
+.death-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeInDeath 1s ease;
+}
+
+.death-screen h1 {
+  color: #ff0000;
+  font-size: 72px;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+  animation: deathPulse 2s infinite;
+}
+
+.death-screen p {
+  color: #fff;
+  font-size: 24px;
+  margin-top: 20px;
+}
+
+@keyframes fadeInDeath {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes deathPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* ... (keep all existing CSS) ... */
+
+/* Add at the end: */
+
+/* Pickup Prompt */
+.pickup-prompt {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  padding: 12px 25px;
+  border-radius: 8px;
+  border: 2px solid rgba(100, 200, 100, 0.8);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  display: none;
+  z-index: 600;
+  animation: pickupBob 1s infinite;
+}
+
+@keyframes pickupBob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-5px);
+  }
+}
+
+/* ... (keep all existing CSS) ... */
+
+/* Add at the end: */
+
+/* Drop Indicator */
+.drop-indicator {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 20, 0.95);
+  border: 3px solid rgba(255, 165, 0, 0.8);
+  border-radius: 12px;
+  padding: 20px 30px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(255, 165, 0, 0.4);
+  pointer-events: none;
+  z-index: 700;
+  animation: dropPulse 2s infinite;
+}
+
+.drop-content {
+  text-align: center;
+}
+
+.drop-content p {
+  margin: 8px 0;
+  color: #fff;
+}
+
+.drop-content strong {
+  color: #ffa500;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
+.drop-item-info {
+  font-size: 16px;
+  color: #64c864;
+  margin: 12px 0 !important;
+}
+
+.drop-controls {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 15px !important;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.drop-controls span {
+  color: #ffa500;
+  font-weight: bold;
+}
+
+@keyframes dropPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(255, 165, 0, 0.4);
+    border-color: rgba(255, 165, 0, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 165, 0, 0.6);
+    border-color: rgba(255, 165, 0, 1);
+  }
+}
+
+/* ... (keep all existing CSS) ... */
+
+/* Add at the end: */
+
+/* ... (keep all existing CSS until Performance Panel section) ... */
+
+/* Performance Panel - UPDATED */
+.performance-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(100, 200, 100, 0.6);
+  border-radius: 8px;
+  padding: 0;
+  min-width: 220px;
+  max-width: 260px;
+  backdrop-filter: blur(5px);
+  font-size: 12px;
+  z-index: 900;
+  pointer-events: auto;
+}
+
+.perf-header {
+  background: rgba(100, 200, 100, 0.2);
+  padding: 10px 15px;
+  border-bottom: 1px solid rgba(100, 200, 100, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer; /* Show it's clickable */
+}
+
+.perf-header h4 {
+  margin: 0;
+  color: #64c864;
+  font-size: 14px;
+  font-weight: bold;
+  pointer-events: none; /* Prevent text from blocking clicks */
+}
+
+.perf-toggle {
+  background: transparent;
+  border: none;
+  color: #64c864;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  pointer-events: auto; /* Enable clicks */
+}
+
+.perf-toggle:hover {
+  color: #8de88d;
+}
+
+.perf-content {
+  padding: 10px 15px;
+  pointer-events: auto; /* Enable clicks inside */
+}
+
+.perf-section {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(100, 200, 100, 0.2);
+}
+
+.perf-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.perf-section strong {
+  color: #8de88d;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.perf-item {
+  color: #fff;
+  margin: 4px 0;
+  display: flex;
+  justify-content: space-between;
+  font-family: "Courier New", monospace;
+}
+
+.perf-item span {
+  color: #64c864;
+  font-weight: bold;
+}
+
+.perf-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  cursor: pointer;
+  color: #fff;
+  font-size: 11px;
+  pointer-events: auto; /* Enable clicks */
+  user-select: none; /* Prevent text selection */
+}
+
+.perf-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #64c864;
+  pointer-events: auto; /* Enable checkbox clicks */
+}
+
+.perf-checkbox:hover {
+  color: #8de88d;
+}
+
+.perf-checkbox input[type="checkbox"]:checked + span {
+  color: #64c864;
+  font-weight: bold;
+}
+
+/* Debug Panel - UPDATED to avoid overlap */
+#debug-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 8px;
+  border: 2px solid rgba(100, 200, 100, 0.3);
+  min-width: 250px;
+  backdrop-filter: blur(5px);
+  pointer-events: none; /* No interaction needed */
+  z-index: 800;
+}
+
+/* Controls Panel - UPDATED position */
+#controls-panel {
+  position: absolute;
+  bottom: 120px; /* Moved up to avoid inventory overlap */
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 2px solid rgba(100, 200, 100, 0.3);
+  max-width: 280px;
+  backdrop-filter: blur(5px);
+  font-size: 13px;
+  pointer-events: none; /* No interaction needed */
+  z-index: 700;
+}
+
+#controls-panel h4 {
+  margin: 0 0 10px 0;
+  color: #64c864;
+  font-size: 16px;
+  text-align: center;
+}
+
+#controls-panel p {
+  margin: 5px 0;
+  color: #fff;
+}
+
+#controls-panel strong {
+  color: #8de88d;
+  min-width: 80px;
+  display: inline-block;
+}
+
+/* Player Health Bar - UPDATED to avoid overlap */
+.player-health {
+  position: absolute;
+  top: 20px;
+  right: 300px; /* Moved left to avoid debug panel */
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px 20px;
+  border-radius: 8px;
+  border: 2px solid rgba(200, 50, 50, 0.6);
+  min-width: 200px;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  z-index: 850;
+}
+
+/* Make sure game container doesn't block clicks on UI */
+#game-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+#game-container canvas {
+  display: block;
+  pointer-events: auto; /* Canvas can capture pointer lock */
+}
+
+/* UI Overlay - ensure proper layering */
+#ui-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Let clicks pass through */
+  z-index: 500;
+}
+
+/* Individual UI elements that need interaction */
+#ui-overlay > .performance-panel,
+#ui-overlay > .crafting-menu,
+#ui-overlay > .building-menu,
+#ui-overlay > .inventory-bar {
+  pointer-events: auto; /* Enable clicks on interactive elements */
+}
+
+/* Inventory Bar - ensure it's above controls */
+#inventory-bar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto; /* Enable interaction */
+  z-index: 800;
+}
+
+/* ... (keep all other existing CSS) ... */
+
+/* Controls Panel - FIXED position to not overlap inventory */
+#controls-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid rgba(100, 200, 100, 0.3);
+  max-width: 240px;
+  max-height: 400px; /* Add max height */
+  overflow-y: auto; /* Allow scrolling if needed */
+  backdrop-filter: blur(5px);
+  font-size: 11px; /* Slightly smaller font */
+  pointer-events: none;
+  z-index: 700;
+}
+
+#controls-panel h4 {
+  margin: 0 0 8px 0;
+  color: #64c864;
+  font-size: 14px;
+  text-align: center;
+}
+
+#controls-panel p {
+  margin: 3px 0;
+  color: #fff;
+  line-height: 1.4;
+}
+
+#controls-panel strong {
+  color: #8de88d;
+  min-width: 60px;
+  display: inline-block;
+  font-size: 10px;
+}
+/* Placement UI */
+.placement-ui {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  padding: 15px 25px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 165, 0, 0.8);
+  color: #fff;
+  text-align: center;
+  backdrop-filter: blur(5px);
+  pointer-events: none;
+  display: none;
+  z-index: 700;
+}
+
+.placement-ui p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.placement-ui kbd {
+  background: rgba(255, 165, 0, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #ffa500;
+  color: #ffa500;
+  font-weight: bold;
+}
